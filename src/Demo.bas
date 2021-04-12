@@ -2,10 +2,11 @@ Attribute VB_Name = "Demo"
 Option Explicit
 
 Sub ClearTable()
+    'Deletes all rows in the master data table
     Dim tbl As ListObject
     Dim r As Long
     
-    Set tbl = MasterDataSheet.ListObjects(MASTER_DATA_TBL)
+    Set tbl = MasterDataSheet.ListObjects(MASTER_DATA_NAME)
     
     For r = tbl.DataBodyRange.Rows.Count To 1 Step -1
         tbl.ListRows(r).Delete
@@ -20,7 +21,7 @@ Sub AddData()
     Dim calories As Integer
     Dim steps As Integer
     
-    activityDate = DateValue(VBA.Now)
+    activityDate = dateValue(VBA.Now)
     distance = 3
     time = 60
     calories = 350
