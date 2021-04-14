@@ -14,6 +14,23 @@ Sub ClearTable()
     
 End Sub
 
+Sub ClearGoalTables()
+    'Deletes all rows in the master data table
+    Dim tbl As ListObject
+    Dim r As Long
+    
+    Set tbl = Dashboard.ListObjects(GOAL_UNLOCKS_DATA_NAME)
+    For r = tbl.DataBodyRange.Rows.Count To 1 Step -1
+        tbl.ListRows(r).Delete
+    Next r
+    
+'    Set tbl = Dashboard.ListObjects(GOAL_SETS_DATA_NAME)
+'    For r = tbl.DataBodyRange.Rows.Count To 1 Step -1
+'        tbl.ListRows(r).Delete
+'    Next r
+    
+End Sub
+
 Sub AddData()
     Dim activityDate As Date
     Dim distance As Single
@@ -29,3 +46,4 @@ Sub AddData()
     
     Call AddSessionToMasterData(activityDate, distance, time, calories, steps)
 End Sub
+
