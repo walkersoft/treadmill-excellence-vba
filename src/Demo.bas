@@ -20,14 +20,7 @@ Sub ClearGoalTables()
     Dim r As Long
     
     Set tbl = Dashboard.ListObjects(GOAL_SUCCESSES_TABLE)
-    For r = tbl.DataBodyRange.Rows.Count To 1 Step -1
-        tbl.ListRows(r).Delete
-    Next r
-    
-'    Set tbl = Dashboard.ListObjects(GOAL_SETS_DATA_NAME)
-'    For r = tbl.DataBodyRange.Rows.Count To 1 Step -1
-'        tbl.ListRows(r).Delete
-'    Next r
+    If Not tbl.DataBodyRange Is Nothing Then tbl.DataBodyRange.Delete
     
 End Sub
 

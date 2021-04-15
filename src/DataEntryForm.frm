@@ -64,7 +64,7 @@ Private Sub LogTreadmillData()
     calories = VBA.CInt(tbCalories.Value)
     steps = VBA.CInt(tbSteps.Value)
 
-    Call AddSessionToMasterData(activityDate, distance, time, calories, steps)
+    Call AddTreadmillLogData(activityDate, distance, time, calories, steps)
 End Sub
 
 

@@ -9,11 +9,11 @@ Private TreadmillLogData As ListObject
 Private GoalData As ListObject
 Private GoalSuccesses As ListObject
 
-Public Sub AddSessionToMasterData(activityDate As Date, distance As Single, time As Single, calories As Integer, steps As Integer)
+Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As Single, calories As Integer, steps As Integer)
     'Adds an entry to the master data log from user input
     'Incoming data should be treated as verified and only
     'needing formatting for display purposes as needed
-    Dim nextRow As Long
+    Dim nextRow As Integer
     Set TreadmillLogData = MasterDataSheet.ListObjects(TREADMILL_LOG_TABLE)
     nextRow = TreadmillLogData.HeaderRowRange.Row + 1
     
@@ -31,53 +31,38 @@ Public Sub AddSessionToMasterData(activityDate As Date, distance As Single, time
 End Sub
 
 Private Sub PopulateGoalAchievements()
-    
-    'Look at the GoalData/log table for data, no GoalData/log means no point
-    'in continuing, so just exit the sub in that case
-    Set GoalData = Dashboard.ListObjects(GOAL_DEFINITIONS_TABLE)
+    'Check the treadmill log and goal sets log - exit the sub if either are empty
+    Set GoalData = Range(GOAL_DEFINITIONS_TABLE).ListObject
     If GoalData.DataBodyRange Is Nothing Then Exit Sub
     
-    Set TreadmillLogData = MasterDataSheet.ListObjects(TREADMILL_LOG_TABLE)
+    Set TreadmillLogData = Range(TREADMILL_LOG_TABLE).ListObject
     If TreadmillLogData.DataBodyRange Is Nothing Then Exit Sub
     
-    'Next go through each entry in master data and check for goal
-    'achievements. Use the date a goal was set to compare with the
-    'dates of entries.
-    Dim achievements As ListObject
-    Dim goalCount As Integer
-    Dim currentGoalPace As Single
-    Dim currentGoal As String
+    'Clear out the current data in the goal achievements
+    Set GoalSuccesses = Range(GOAL_SUCCESSES_TABLE).ListObject
+    If Not GoalSuccesses.DataBodyRange Is Nothing Then GoalSuccesses.DataBodyRange.Delete
     
-    Set achievements = Dashboard.ListObjects(GOAL_SUCCESSES_TABLE)
-    goalCount = GoalData.DataBodyRange.Rows.Count
-    'currentGoal = GoalData.DataBodyRange.Cells(1, 1)
-    'currentGoalPace = GoalData.DataBodyRange.Cells(1, 4)
-    'Debug.Print currentGoal
+    Dim goalPace As Single
+    Dim goalDate As Date
+    Dim goalDistance As Single
+    Dim startRow As Integer
+    Dim goal As Range
     
-    Dim bottom As Integer
-    Dim top As Integer
-    Dim nextRow As Integer
-    'Debug.Print TreadmillLogData.DataBodyRange.Address
-    
-    bottom = TreadmillLogData.DataBodyRange.Rows.Count '+ TreadmillLogData.HeaderRowRange.Row
-    top = TreadmillLogData.HeaderRowRange.Row + 1
-    Dim g As Integer
-    Dim currentGoalDist As Single
-    
-    For g = 1 To goalCount
-        currentGoal = GoalData.DataBodyRange.Cells(g, 1)
-        currentGoalPace = GoalData.DataBodyRange.Cells(g, 4)
-        currentGoalDist = GoalData.DataBodyRange.Cells(g, 2)
-        bottom = ProcessLogSegment(bottom, currentGoal, currentGoalPace, currentGoalDist)
-    Next g
-    Debug.Print bottom
+    'Go through each goal (starting with the newest), and pass the goal data to the
+    'goal achievement creation function.
+    startRow = TreadmillLogData.DataBodyRange.Rows.Count
+    For Each goal In GoalData.DataBodyRange.Rows
+        goalDate = goal.Cells(1, 1)
+        goalPace = goal.Cells(1, 4)
+        goalDistance = goal.Cells(1, 2)
+        startRow = CreateGoalEntries(startRow, goalDate, goalPace, goalDistance)
+    Next goal
 End Sub
 
-Private Function ProcessLogSegment(startRow As Integer, goalDate As String, goalPace As Single, goalDistance As Single) As Long
-    'Starting from a given row number, work backwards through the master data log
-    'looking for entries that match the given distance/pace amounts. Stop when the log
-    'row begin evaluated is no longer on or after the date the given goal was set
-    'and return the row number where the processing stopped.
+Private Function CreateGoalEntries(startRow As Integer, goalDate As Date, goalPace As Single, goalDistance As Single) As Long
+    'Creates entries in the goal achievment log using goal data passed in.
+    'This function receives a row number to start with in the treadmill log
+    'and returns the row it stopped on.
     Dim logRow As ListRow
     Dim rowId As Integer
     Dim distance As Single
@@ -86,7 +71,7 @@ Private Function ProcessLogSegment(startRow As Integer, goalDate As String, goal
     Dim activityDate As Date
     Dim i As Integer
     
-    'calculate where in the achievments table the loop will begin writing
+    'Calculate where in the achievments table the loop will begin writing
     i = 1
     Set GoalSuccesses = Range(GOAL_SUCCESSES_TABLE).ListObject
     If Not GoalSuccesses.DataBodyRange Is Nothing Then
@@ -95,19 +80,20 @@ Private Function ProcessLogSegment(startRow As Integer, goalDate As String, goal
     
     Set TreadmillLogData = Range(TREADMILL_LOG_TABLE).ListObject
     For rowId = startRow To TreadmillLogData.HeaderRowRange.Row + 1 Step -1
-        ProcessLogSegment = rowId
-        activityDate = TreadmillLogData.ListRows(rowId).Range(0, 1).Value
+        'Set the current row as the return value
+        CreateGoalEntries = rowId
         
-        'exit the function if the date of the log record is before the date the current goal was set
+        'Exit the function if the date of the log record is before the date the current goal was set
+        activityDate = TreadmillLogData.ListRows(rowId).Range(0, 1).Value
         If activityDate < goalDate Then Exit Function
         
-        'get some data from the log row
+        'Get some data from the log row
         Set logRow = TreadmillLogData.ListRows(rowId)
         distance = logRow.Range(0, 2)
         time = logRow.Range(0, 3)
         pace = time / distance
         
-        'compare goal data to the log data and create an achievment entry if the goal was met
+        'Compare goal data to the log data and create an achievment entry if the goal was met
         If (distance >= goalDistance And pace <= goalPace) Then
             GoalSuccesses.ListRows.Add
             GoalSuccesses.ListRows(i).Range(1, 1) = activityDate
