@@ -19,7 +19,7 @@ Sub ClearGoalTables()
     Dim tbl As ListObject
     Dim r As Long
     
-    Set tbl = Dashboard.ListObjects(GOAL_UNLOCKS_DATA_NAME)
+    Set tbl = Dashboard.ListObjects(GOAL_SUCCESSES_TABLE)
     For r = tbl.DataBodyRange.Rows.Count To 1 Step -1
         tbl.ListRows(r).Delete
     Next r
