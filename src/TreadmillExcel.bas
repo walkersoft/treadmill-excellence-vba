@@ -10,6 +10,8 @@ Private GoalData As ListObject
 Private GoalSuccesses As ListObject
 
 Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As Single, calories As Integer, steps As Integer)
+    Application.ScreenUpdating = False
+    
     'Adds an entry to the master data log from user input
     'Incoming data should be treated as verified and only
     'needing formatting for display purposes as needed
@@ -22,12 +24,39 @@ Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As
     End If
     
     TreadmillLogData.ListRows.Add
-    Range("A" & nextRow).Value = activityDate
-    Range("B" & nextRow).Value = Format(distance, "0.00")
-    Range("C" & nextRow).Value = Format(time, "0.00")
-    Range("D" & nextRow).Value = calories
-    Range("E" & nextRow).Value = steps
+    MasterDataSheet.Range("A" & nextRow).Value = activityDate
+    MasterDataSheet.Range("B" & nextRow).Value = Format(distance, "0.00")
+    MasterDataSheet.Range("C" & nextRow).Value = Format(time, "0.00")
+    MasterDataSheet.Range("D" & nextRow).Value = calories
+    MasterDataSheet.Range("E" & nextRow).Value = steps
     
+    Call PopulateGoalAchievements
+    Call RefreshPivotCache
+    
+    Application.ScreenUpdating = True
+End Sub
+
+Private Sub checkcharts()
+    Dim c As Chart
+    Dim d As ChartObject
+    For Each d In Dashboard.ChartObjects
+        Debug.Print d.Name
+    Next d
+End Sub
+
+Private Sub RefreshPivotCache()
+    Dim cache As ChartObject
+    
+    ThisWorkbook.RefreshAll
+    'ActiveChart.PivotLayout.PivotTable.PivotFields("Months").Orientation = xlHidden
+    'ActiveChart.PivotLayout.PivotTable.PivotFields("Date").AutoGroup
+    
+    For Each cache In Dashboard.ChartObjects
+        With cache.Chart.PivotLayout.PivotTable
+            .PivotFields("Months").Orientation = xlHidden
+            .PivotFields("Date").AutoGroup
+        End With
+    Next cache
 End Sub
 
 Private Sub PopulateGoalAchievements()
