@@ -59,13 +59,15 @@ Private Sub RefreshPivotCache()
     Next cache
 End Sub
 
-Private Sub PopulateGoalAchievements()
+Public Sub PopulateGoalAchievements()
     'Check the treadmill log and goal sets log - exit the sub if either are empty
     Set GoalData = Range(GOAL_DEFINITIONS_TABLE).ListObject
     If GoalData.DataBodyRange Is Nothing Then Exit Sub
     
     Set TreadmillLogData = Range(TREADMILL_LOG_TABLE).ListObject
     If TreadmillLogData.DataBodyRange Is Nothing Then Exit Sub
+    
+    Application.ScreenUpdating = False
     
     'Clear out the current data in the goal achievements
     Set GoalSuccesses = Range(GOAL_SUCCESSES_TABLE).ListObject
@@ -86,6 +88,8 @@ Private Sub PopulateGoalAchievements()
         goalDistance = goal.Cells(1, 2)
         startRow = CreateGoalEntries(startRow, goalDate, goalPace, goalDistance)
     Next goal
+    
+    Application.ScreenUpdating = True
 End Sub
 
 Private Function CreateGoalEntries(startRow As Integer, goalDate As Date, goalPace As Single, goalDistance As Single) As Long
@@ -136,6 +140,28 @@ Private Function CreateGoalEntries(startRow As Integer, goalDate As Date, goalPa
     
 End Function
 
+Public Sub AddGoalSet(activityDate As Date, distance As Double, time As Double)
+    Dim GoalTable As ListObject
+    Dim Recalculate As VbMsgBoxResult
+    
+    Set GoalTable = Range(GOAL_DEFINITIONS_TABLE).ListObject
+    GoalTable.ListRows.Add 1
+    GoalTable.ListRows(1).Range(1, 1) = activityDate
+    GoalTable.ListRows(1).Range(1, 2) = distance
+    GoalTable.ListRows(1).Range(1, 3) = time
+    GoalTable.ListRows(1).Range(1, 4).Formula = "=[@Minutes]/[@Miles]"
+    
+    Recalculate = MsgBox("Would you like to recalculate goal achievements now?", vbYesNo, "Recalculate?")
+    
+    If Recalculate = vbYes Then
+        Call PopulateGoalAchievements
+    End If
+End Sub
+
 Public Sub LoadTreadmillEntryForm()
     DataEntryForm.Show
+End Sub
+
+Public Sub LoadGoalEntryForm()
+    GoalCreationForm.Show
 End Sub
