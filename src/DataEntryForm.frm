@@ -18,6 +18,13 @@ Option Explicit
 Private DATE_ERROR_MESSAGE As String
 Private STARTING_DATE As Date
 
+Private Sub UserForm_Activate()
+    'this will help position the form better in the application
+    'in the event the user has multiple monitors
+    Me.top = (Application.Height / 2) - (Me.Width / 2)
+    Me.left = (Application.Width / 2) - (Me.Height / 2)
+End Sub
+
 Private Sub UserForm_Initialize()
     STARTING_DATE = Date
     DATE_ERROR_MESSAGE = "Please enter a valid activity date."
