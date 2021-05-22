@@ -12,6 +12,11 @@ Private GoalSuccesses As ListObject
 Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As Single, calories As Integer, steps As Integer)
     Application.ScreenUpdating = False
     
+    'Check if master data is protected and unprotect it
+    Dim isProtected As Boolean
+    isProtected = MasterDataSheet.ProtectContents
+    If isProtected = True Then MasterDataSheet.Unprotect
+    
     'Adds an entry to the master data log from user input
     'Incoming data should be treated as verified and only
     'needing formatting for display purposes as needed
@@ -33,18 +38,13 @@ Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As
     Call PopulateGoalAchievements
     Call RefreshPivotCache
     
+    're-enable master data protection if it was previously set
+    If isProtected = True Then MasterDataSheet.Protect
+    
     Application.ScreenUpdating = True
 End Sub
 
-Private Sub checkcharts()
-    Dim c As Chart
-    Dim d As ChartObject
-    For Each d In Dashboard.ChartObjects
-        Debug.Print d.Name
-    Next d
-End Sub
-
-Private Sub RefreshPivotCache()
+Public Sub RefreshPivotCache()
     Dim cache As ChartObject
     
     ThisWorkbook.RefreshAll
@@ -157,6 +157,30 @@ Public Sub AddGoalSet(activityDate As Date, distance As Double, time As Double)
         Call PopulateGoalAchievements
     End If
 End Sub
+
+Public Sub ToggleMasterDataEditing()
+    Dim frame As TextFrame
+    Dim shp As Shape
+    Dim tbl As ListObject
+    
+    Set tbl = MasterDataSheet.ListObjects("MasterDataTable")
+    Set frame = MasterDataSheet.Shapes("ToggleMasterDataEditingButton").TextFrame
+    Set shp = MasterDataSheet.Shapes("ToggleMasterDataEditingButton")
+    
+    If MasterDataSheet.ProtectContents = False Then
+        frame.Characters.Text = "Enable Master" + vbNewLine + "Data Editing"
+        tbl.TableStyle = "TableStyleMedium4"
+        shp.ShapeStyle = msoShapeStylePreset39
+        MasterDataSheet.Protect
+    Else
+        MasterDataSheet.Unprotect
+        tbl.TableStyle = "TableStyleMedium2"
+        frame.Characters.Text = "Disable Master" + vbNewLine + "Data Editing"
+        shp.ShapeStyle = msoShapeStylePreset37
+    End If
+        
+End Sub
+
 
 Public Sub LoadTreadmillEntryForm()
     DataEntryForm.Show

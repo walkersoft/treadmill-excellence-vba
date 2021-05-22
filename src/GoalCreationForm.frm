@@ -15,13 +15,19 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private DATE_ERROR_MESSAGE As String
 Private STARTING_DATE As Date
 
 Private Sub UserForm_Initialize()
     STARTING_DATE = Date
-    DATE_ERROR_MESSAGE = "Please enter a valid activity date."
+    
     Call SetDateFields
+End Sub
+
+Private Sub UserForm_Activate()
+    'this will help position the form better in the application
+    'in the event the user has multiple monitors
+    Me.top = (Application.Height / 2) - (Me.Width / 2)
+    Me.left = (Application.Width / 2) - (Me.Height / 2)
 End Sub
 
 Private Sub Cancel_Click()
@@ -29,10 +35,10 @@ Private Sub Cancel_Click()
 End Sub
 
 Private Sub SaveGoal_Click()
-    If Not ValidActivityDate Then Exit Sub
+    If Not ValidActivityDate(tbMonth.Value, tbDay.Value, tbYear.Value) Then Exit Sub
     If Not ValidGoalData Then Exit Sub
     
-    Call AddGoalSet(BuildDateValueFromFormInputs, tbDistance.Value, tbTime.Value)
+    Call AddGoalSet(BuildDateValueFromFormInputs(tbMonth.Value, tbDay.Value, tbYear.Value), tbDistance.Value, tbTime.Value)
     Call Cancel_Click
     
 End Sub
@@ -60,39 +66,6 @@ Private Function ValidGoalData() As Boolean
     ValidGoalData = True
 End Function
 
-'Copied from DataEntryForm - should make this common to avoid more duplication if needed elsewhere
-Private Function ValidActivityDate() As Boolean
-    'Attempts to validate the data in the date inputs is an actual date
-    'There is a bit of unexpected behavior as noted below
-
-    If Not IsNumeric(tbMonth.Value) Or Not IsNumeric(tbDay.Value) Or Not IsNumeric(tbYear.Value) Then
-        Call ShowDateError
-        ValidActivityDate = False
-        Exit Function
-    End If
-    
-    'IsDate() is "forgiving" and not based on locality; see: https://stackoverflow.com/questions/50108064/why-does-30-9-2013-not-fail-isdate-if-system-date-format-set-for-mm-dd-yyyy
-    'something like 30/11/2021 will pass this test when the expectation is that it shouldn't
-    If Not IsDate(BuildDateValueFromFormInputs()) Then
-        Call ShowDateError
-        ValidActivityDate = False
-        Exit Function
-    End If
-    
-    ValidActivityDate = True
-End Function
-
-Private Function BuildDateValueFromFormInputs() As String
-    BuildDateValueFromFormInputs = tbMonth.Value & "/" & tbDay.Value & "/" + tbYear.Value
-End Function
-
-Private Sub ShowInputError(message As String)
-    MsgBox message, vbInformation, "Invalid Data"
-End Sub
-
-Private Sub ShowDateError()
-    Call ShowInputError(DATE_ERROR_MESSAGE)
-End Sub
 
 Private Sub SetDateFields()
     tbMonth.Value = DatePart("m", STARTING_DATE)
