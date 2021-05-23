@@ -15,11 +15,10 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private DATE_ERROR_MESSAGE As String
 Private STARTING_DATE As Date
 
 Private Sub UserForm_Activate()
-    'this will help position the form better in the application
+    'This will help position the form better in the application
     'in the event the user has multiple monitors
     Me.top = (Application.Height / 2) - (Me.Width / 2)
     Me.left = (Application.Width / 2) - (Me.Height / 2)
@@ -27,7 +26,6 @@ End Sub
 
 Private Sub UserForm_Initialize()
     STARTING_DATE = Date
-    DATE_ERROR_MESSAGE = "Please enter a valid activity date."
     Call SetDateFields
 End Sub
 
@@ -36,7 +34,7 @@ Private Sub Cancel_Click()
 End Sub
 
 Private Sub SaveAndClose_Click()
-    If Not ValidActivityDate Then Exit Sub
+    If Not ValidActivityDate(tbMonth.Value, tbDay.Value, tbYear.Value) Then Exit Sub
     If Not ValidTreadmillData Then Exit Sub
     
     Call LogTreadmillData
@@ -45,7 +43,7 @@ Private Sub SaveAndClose_Click()
 End Sub
 
 Private Sub SaveAndNew_Click()
-    If Not ValidActivityDate Then Exit Sub
+    If Not ValidActivityDate(tbMonth.Value, tbDay.Value, tbYear.Value) Then Exit Sub
     If Not ValidTreadmillData Then Exit Sub
     
     Call LogTreadmillData
@@ -62,49 +60,23 @@ Private Sub LogTreadmillData()
     Dim activityDate As Date
     Dim distance As Single
     Dim time As Single
-    Dim calories As Integer
-    Dim steps As Integer
+    Dim calories As Long
+    Dim steps As Long
 
-    activityDate = BuildDateValueFromFormInputs
+    activityDate = BuildDateValue(tbMonth.Value, tbDay.Value, tbYear.Value)
     distance = tbDistance.Value
     time = tbTime.Value
-    calories = VBA.CInt(tbCalories.Value)
-    steps = VBA.CInt(tbSteps.Value)
+    calories = VBA.CLng(tbCalories.Value)
+    steps = VBA.CLng(tbSteps.Value)
     
     Call AddTreadmillLogData(activityDate, distance, time, calories, steps)
 End Sub
-
 
 Private Sub SetDateFields()
     tbMonth.Value = DatePart("m", STARTING_DATE)
     tbDay.Value = DatePart("d", STARTING_DATE)
     tbYear.Value = DatePart("yyyy", STARTING_DATE)
 End Sub
-
-Private Function BuildDateValueFromFormInputs() As String
-    BuildDateValueFromFormInputs = tbMonth.Value & "/" & tbDay.Value & "/" + tbYear.Value
-End Function
-
-Private Function ValidActivityDate() As Boolean
-    'Attempts to validate the data in the date inputs is an actual date
-    'There is a bit of unexpected behavior as noted below
-
-    If Not IsNumeric(tbMonth.Value) Or Not IsNumeric(tbDay.Value) Or Not IsNumeric(tbYear.Value) Then
-        Call ShowDateError
-        ValidActivityDate = False
-        Exit Function
-    End If
-    
-    'IsDate() is "forgiving" and not based on locality; see: https://stackoverflow.com/questions/50108064/why-does-30-9-2013-not-fail-isdate-if-system-date-format-set-for-mm-dd-yyyy
-    'something like 30/11/2021 will pass this test when the expectation is that it shouldn't
-    If Not IsDate(BuildDateValueFromFormInputs()) Then
-        Call ShowDateError
-        ValidActivityDate = False
-        Exit Function
-    End If
-    
-    ValidActivityDate = True
-End Function
 
 Private Function ValidTreadmillData() As Boolean
     'Validates all of the various data metric fields from the user
@@ -132,11 +104,3 @@ Private Function ValidTreadmillData() As Boolean
     
     ValidTreadmillData = True
 End Function
-
-Private Sub ShowInputError(message As String)
-    MsgBox message, vbInformation, "Invalid Data"
-End Sub
-
-Private Sub ShowDateError()
-    Call ShowInputError(DATE_ERROR_MESSAGE)
-End Sub

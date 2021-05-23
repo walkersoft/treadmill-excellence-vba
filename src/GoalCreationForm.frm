@@ -19,12 +19,11 @@ Private STARTING_DATE As Date
 
 Private Sub UserForm_Initialize()
     STARTING_DATE = Date
-    
     Call SetDateFields
 End Sub
 
 Private Sub UserForm_Activate()
-    'this will help position the form better in the application
+    'This will help position the form better in the application
     'in the event the user has multiple monitors
     Me.top = (Application.Height / 2) - (Me.Width / 2)
     Me.left = (Application.Width / 2) - (Me.Height / 2)
@@ -38,7 +37,7 @@ Private Sub SaveGoal_Click()
     If Not ValidActivityDate(tbMonth.Value, tbDay.Value, tbYear.Value) Then Exit Sub
     If Not ValidGoalData Then Exit Sub
     
-    Call AddGoalSet(BuildDateValueFromFormInputs(tbMonth.Value, tbDay.Value, tbYear.Value), tbDistance.Value, tbTime.Value)
+    Call AddGoalSet(BuildDateValue(tbMonth.Value, tbDay.Value, tbYear.Value), tbDistance.Value, tbTime.Value)
     Call Cancel_Click
     
 End Sub
@@ -66,10 +65,8 @@ Private Function ValidGoalData() As Boolean
     ValidGoalData = True
 End Function
 
-
 Private Sub SetDateFields()
     tbMonth.Value = DatePart("m", STARTING_DATE)
     tbDay.Value = DatePart("d", STARTING_DATE)
     tbYear.Value = DatePart("yyyy", STARTING_DATE)
 End Sub
-

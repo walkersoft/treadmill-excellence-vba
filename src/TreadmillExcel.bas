@@ -9,10 +9,11 @@ Private TreadmillLogData As ListObject
 Private GoalData As ListObject
 Private GoalSuccesses As ListObject
 
-Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As Single, calories As Integer, steps As Integer)
+Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As Single, calories As Long, steps As Long)
     Application.ScreenUpdating = False
     
     'Check if master data is protected and unprotect it
+    'so the new log entry can be added
     Dim isProtected As Boolean
     isProtected = MasterDataSheet.ProtectContents
     If isProtected = True Then MasterDataSheet.Unprotect
@@ -20,8 +21,8 @@ Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As
     'Adds an entry to the master data log from user input
     'Incoming data should be treated as verified and only
     'needing formatting for display purposes as needed
-    Dim nextRow As Integer
     Set TreadmillLogData = MasterDataSheet.ListObjects(TREADMILL_LOG_TABLE)
+    Dim nextRow As Integer
     nextRow = TreadmillLogData.HeaderRowRange.Row + 1
     
     If Not TreadmillLogData.DataBodyRange Is Nothing Then
@@ -38,7 +39,7 @@ Public Sub AddTreadmillLogData(activityDate As Date, distance As Single, time As
     Call PopulateGoalAchievements
     Call RefreshPivotCache
     
-    're-enable master data protection if it was previously set
+    'Re-enable master data protection if it was previously protected
     If isProtected = True Then MasterDataSheet.Protect
     
     Application.ScreenUpdating = True
@@ -48,12 +49,19 @@ Public Sub RefreshPivotCache()
     Dim cache As ChartObject
     
     ThisWorkbook.RefreshAll
-    'ActiveChart.PivotLayout.PivotTable.PivotFields("Months").Orientation = xlHidden
-    'ActiveChart.PivotLayout.PivotTable.PivotFields("Date").AutoGroup
-    
     For Each cache In Dashboard.ChartObjects
         With cache.Chart.PivotLayout.PivotTable
-            .PivotFields("Months").Orientation = xlHidden
+            .PivotFields("Date").AutoGroup
+            'Ensure there is a "Months" field in the pivot table and
+            'hide the entries to improve the chart aesthetics
+            Dim f As PivotField
+            For Each f In cache.Chart.PivotLayout.PivotTable.PivotFields
+                If f.Name = "Months" Then
+                    .PivotFields("Months").Orientation = xlHidden
+                End If
+            Next f
+            'I don't exactly know why, but auto grouping needs to be done again
+            'to keep months grouped together in the charts
             .PivotFields("Date").AutoGroup
         End With
     Next cache
@@ -81,7 +89,7 @@ Public Sub PopulateGoalAchievements()
     
     'Go through each goal (starting with the newest), and pass the goal data to the
     'goal achievement creation function.
-    startRow = TreadmillLogData.DataBodyRange.Rows.Count
+    startRow = TreadmillLogData.DataBodyRange.Rows.Count + 1
     For Each goal In GoalData.DataBodyRange.Rows
         goalDate = goal.Cells(1, 1)
         goalPace = goal.Cells(1, 4)
@@ -89,6 +97,7 @@ Public Sub PopulateGoalAchievements()
         startRow = CreateGoalEntries(startRow, goalDate, goalPace, goalDistance)
     Next goal
     
+    Call RefreshPivotCache
     Application.ScreenUpdating = True
 End Sub
 
@@ -115,15 +124,16 @@ Private Function CreateGoalEntries(startRow As Integer, goalDate As Date, goalPa
     For rowId = startRow To TreadmillLogData.HeaderRowRange.Row + 1 Step -1
         'Set the current row as the return value
         CreateGoalEntries = rowId
-        
+        Debug.Print "RowId: " & rowId & " Target ListRow: " & (rowId - 1)
         'Exit the function if the date of the log record is before the date the current goal was set
-        activityDate = TreadmillLogData.ListRows(rowId).Range(0, 1).Value
+        Debug.Print "getting value: " & TreadmillLogData.ListRows(rowId - 1).Range(1, 1).Value
+        activityDate = TreadmillLogData.ListRows(rowId - 1).Range(1, 1).Value
         If activityDate < goalDate Then Exit Function
         
         'Get some data from the log row
-        Set logRow = TreadmillLogData.ListRows(rowId)
-        distance = logRow.Range(0, 2)
-        time = logRow.Range(0, 3)
+        Set logRow = TreadmillLogData.ListRows(rowId - 1)
+        distance = logRow.Range(1, 2)
+        time = logRow.Range(1, 3)
         pace = time / distance
         
         'Compare goal data to the log data and create an achievment entry if the goal was met
@@ -135,9 +145,7 @@ Private Function CreateGoalEntries(startRow As Integer, goalDate As Date, goalPa
             GoalSuccesses.ListRows(i).Range(1, 4).Formula = "=[@Minutes]/[@Miles]"
             i = i + 1
         End If
-        
     Next rowId
-    
 End Function
 
 Public Sub AddGoalSet(activityDate As Date, distance As Double, time As Double)
@@ -180,7 +188,6 @@ Public Sub ToggleMasterDataEditing()
     End If
         
 End Sub
-
 
 Public Sub LoadTreadmillEntryForm()
     DataEntryForm.Show
